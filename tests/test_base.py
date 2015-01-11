@@ -1,6 +1,8 @@
 import httpretty
 import requests
 
+import xml.etree.ElementTree as ET
+
 from mpns import MPNSTile
 
 
@@ -289,3 +291,21 @@ class Test_Base(object):
         assert status['subscription_status'] == 'Test'
         assert status['notification_status'] == 'Test'
         assert status['message_id'] == 'Test'
+
+
+    #Should test when elements in payload are not added or when
+    #elements are added that are not in payload
+    def test_serialize_tree(self):
+        #Creating MPNS object and tree with each type of element for serialization
+        test_tile = MPNSTile()
+        root = ET.Element("Test_Notification")
+        tile = ET.SubElement(root, 'Test_Tile')
+        payload = {'test_text': 'test1', 'id': 'test_id'}
+
+        test_tile.optional_attribute(tile, 'Id', 'id', payload)
+        test_tile.optional_subelement(tile, 'BackgroundImage', 'background_image', payload)
+        test_tile.clearable_subelement(tile, 'Count', 'count', payload)
+
+        test_et = ET.ElementTree(root)
+        contents = test_tile.serialize_tree(test_et)
+        #Method for comparing xml needed
