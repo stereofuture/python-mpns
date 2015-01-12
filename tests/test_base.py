@@ -200,7 +200,7 @@ class Test_Base(object):
         # other headers passed without unaltered
         assert status['http_status_code'] == 406
         assert status['error'] == 'Not Acceptable - per-day throttling limit reached'
-        assert status['backoff_seconds'] == 24*60*60
+        assert status['backoff_seconds'] == 24 * 60 * 60
         assert status['device_connection_status'] == 'Test'
         assert status['subscription_status'] == 'Test'
         assert status['notification_status'] == 'Test'
@@ -229,7 +229,7 @@ class Test_Base(object):
         # other headers passed without unaltered
         assert status['http_status_code'] == 412
         assert status['error'] == 'Precondition Failed - device inactive, try once per-hour'
-        assert status['backoff_seconds'] == 60*60
+        assert status['backoff_seconds'] == 60 * 60
         assert status['device_connection_status'] == 'Test'
         assert status['subscription_status'] == 'Test'
         assert status['notification_status'] == 'Test'
@@ -292,7 +292,6 @@ class Test_Base(object):
         assert status['notification_status'] == 'Test'
         assert status['message_id'] == 'Test'
 
-
     #Should test when elements in payload are not added or when
     #elements are added that are not in payload
     def test_serialize_tree(self):
@@ -300,12 +299,21 @@ class Test_Base(object):
         test_tile = MPNSTile()
         root = ET.Element("Test_Notification")
         tile = ET.SubElement(root, 'Test_Tile')
-        payload = {'test_text': 'test1', 'id': 'test_id'}
+        #payload includes excess key/value
+        payload = {'test_text': 'test1',
+                   'id': 'test_id',
+                   'background_image': 'test.jpg',
+                   #An error is thrown when entering an int for count
+                   'count': '4'}
 
         test_tile.optional_attribute(tile, 'Id', 'id', payload)
         test_tile.optional_subelement(tile, 'BackgroundImage', 'background_image', payload)
         test_tile.clearable_subelement(tile, 'Count', 'count', payload)
 
         test_et = ET.ElementTree(root)
-        contents = test_tile.serialize_tree(test_et)
-        #Method for comparing xml needed
+        serialized_contents = test_tile.serialize_tree(test_et)
+        #Check that serialzed xml string contains added elements and attributes
+        assert 'attribute="test_id"' in serialized_contents
+        assert 'test.jpg' in serialized_contents
+        assert '4' in serialized_contents
+        assert "test1" not in serialized_contents
