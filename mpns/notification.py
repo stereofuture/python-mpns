@@ -50,9 +50,6 @@ class MPNSBase(object):
             el.text = payload[payload_param]
             return el
 
-    def prepare_payload(self, payload):
-        raise NotImplementedError('Subclasses should override prepare_payload method')
-
     def parse_response(self, response):
         status = {
             'device_connection_status': response.headers.get('x-deviceconnectionstatus', ''), # Connected, InActive, Disconnected, TempDisconnected
