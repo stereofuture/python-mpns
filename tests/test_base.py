@@ -1,12 +1,14 @@
 import httpretty
 import requests
+import unittest
 
 import xml.etree.ElementTree as ET
 
-from mpns import MPNSTile
+# Change to import mpns and then declare objects from there
+from mpns import MPNSTile, MPNSToast
 
 
-class Test_Base(object):
+class Test_Base(unittest.TestCase):
     @httpretty.activate
     def test_parse_response_200(self):
         # Mocking response headers
@@ -316,4 +318,32 @@ class Test_Base(object):
         assert 'attribute="test_id"' in serialized_contents
         assert 'test.jpg' in serialized_contents
         assert '4' in serialized_contents
+        assert "test1" not in serialized_contents
+
+    #Should test when elements in payload are not added or when
+    #elements are added that are not in payload
+    def test_mpnstoast_prepare_payload(self):
+        #Creating MPNS object and tree with each type of element for serialization
+        test_toast = MPNSToast()
+        root = ET.Element("Test_Notification")
+        tile = ET.SubElement(root, 'Test_Toast')
+        #payload includes excess key/value
+        payload = {'test_text': 'test1',
+                   'id': 'test_id',
+                   'background_image': 'test.jpg',
+                   'count': '4'}
+
+        test_toast.optional_attribute(tile, 'Id', 'id', payload)
+        test_toast.optional_subelement(tile, 'BackgroundImage', 'background_image', payload)
+
+        #MPNSToast has no clearable_subelemt so checking for exception
+        with self.assertRaises(AttributeError) as context:
+            test_toast.clearable_subelement(tile, 'Count', 'count', payload)
+
+        test_et = ET.ElementTree(root)
+        serialized_contents = test_toast.serialize_tree(test_et)
+        #Check that serialzed xml string contains added elements and attributes
+        assert 'attribute="test_id"' in serialized_contents
+        assert 'test.jpg' in serialized_contents
+        assert '4' not in serialized_contents
         assert "test1" not in serialized_contents
