@@ -5,7 +5,7 @@ import unittest
 import xml.etree.ElementTree as ET
 
 # Change to import mpns and then declare objects from there
-from mpns import MPNSTile, MPNSToast
+from mpns import MPNSTile, MPNSToast, MPNSRaw
 
 
 class Test_Base(unittest.TestCase):
@@ -326,24 +326,40 @@ class Test_Base(unittest.TestCase):
         #Creating MPNS object and tree with each type of element for serialization
         test_toast = MPNSToast()
         root = ET.Element("Test_Notification")
-        tile = ET.SubElement(root, 'Test_Toast')
+        toast = ET.SubElement(root, 'Test_Toast')
         #payload includes excess key/value
-        payload = {'test_text': 'test1',
+        payload = {'text1': 'test1',
+                   'text2': 'test2',
+                   'param': 'test_param',
                    'id': 'test_id',
-                   'background_image': 'test.jpg',
-                   'count': '4'}
+                   'count': '2'}
 
-        test_toast.optional_attribute(tile, 'Id', 'id', payload)
-        test_toast.optional_subelement(tile, 'BackgroundImage', 'background_image', payload)
+        test_toast.optional_attribute(toast, 'Id', 'id', payload)
+        test_toast.optional_subelement(toast, 'Text1', 'text1', payload)
+        test_toast.optional_subelement(toast, 'Text2', 'text2', payload)
+        test_toast.optional_subelement(toast, 'Param', 'param', payload)
 
         #MPNSToast has no clearable_subelemt so checking for exception
         with self.assertRaises(AttributeError) as context:
-            test_toast.clearable_subelement(tile, 'Count', 'count', payload)
+            test_toast.clearable_subelement(toast, 'Count', 'count', payload)
 
-        test_et = ET.ElementTree(root)
-        serialized_contents = test_toast.serialize_tree(test_et)
+        serialized_contents = test_toast.prepare_payload(payload)
         #Check that serialzed xml string contains added elements and attributes
-        assert 'attribute="test_id"' in serialized_contents
-        assert 'test.jpg' in serialized_contents
+        assert 'Toast' in serialized_contents
+        assert 'Text1' in serialized_contents
+        assert '<wp:Text2>test2</wp:Text2>' in serialized_contents
+        assert "test_param" in serialized_contents
         assert '4' not in serialized_contents
-        assert "test1" not in serialized_contents
+        assert 'attribute="test_id"' not in serialized_contents
+
+    #MPNSRaw only has one function, prepare_payload
+    def test_mpnsraw(self):
+        test_raw = MPNSRaw()
+        payload = {'text1': 'test1',
+                   'text2': 'test2',
+                   'param': 'test_param',
+                   'id': 'test_id',
+                   'count': '2'}
+
+        prepared_payload = test_raw.prepare_payload(payload)
+        assert prepared_payload == payload
